@@ -16,25 +16,20 @@ passport.deserializeUser((id, done) => {
 });
 
 passport.use(
-  new GoogleStrategy( // internally GoogleStrategy = google called by app.get with the parameter "google"
+  new GoogleStrategy( // internally GoogleStrategy = google called from authRoutes.js by app.get with the parameter "google"
     {
       clientID: keys.googleClientID,
       clientSecret: keys.googleClientSecret,
       callbackURL: "/auth/google/callback",
       proxy: true
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({ googleId: profile.id }).then(existingUser => {
-        if (existingUser) {
-          // we already have a record with the given profile ID
-          done(null, existingUser);
-        } else {
-          // we dont have a record with this ID, create a new record
-          new User({ googleId: profile.id })
-            .save()
-            .then(user => done(null, user));
-        }
-      });
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = User.findOne({ googleId: profile.id });
+      if (existingUser) {
+        return done(null, existingUser);
+      }
+      const user = new User({ googleId: profile.id }).save();
+      done(null, user);
     }
   )
 );
